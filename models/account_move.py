@@ -1,21 +1,41 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
+from collections import defaultdict
 import re
 
-CUSTOMER_DOCUMENTS = ['out_invoice','out_refund']
-VENDOR_DOCUMENTS = ['in_invoice','in_refund']
+CUSTOMER_DOCUMENTS = ['out_invoice', 'out_refund']
+VENDOR_DOCUMENTS = ['in_invoice', 'in_refund']
 
 
 class AccountMove(models.Model):
     _inherit = "account.move"
 
+    show_fiscal_fields = fields.Boolean(
+        related="company_id.show_fiscal_fields")
     control_number = fields.Char("Control Number", copy=False)
-    fiscal_check = fields.Boolean("Is Fiscal", default=False, copy=False)
+    fiscal_check = fields.Boolean(
+        "Is Fiscal",
+        default=False,
+        copy=False,
+        compute="_compute_fiscal_check",
+        readonly=False,
+        store=True
+    )
     fiscal_correlative = fields.Char("Fiscal Correlative", copy=False)
-    show_fiscal_fields = fields.Boolean(related="company_id.show_fiscal_fields")
+    invoice_print_method = fields.Selection(
+        related="company_id.invoice_print_method")
+    ticket_ref = fields.Char("Ticket reference", readonly=True)
+    fp_serial_num = fields.Char("Serial number FP", readonly=True)
+    num_report_z = fields.Char("Numero de reporte Z", readonly=True)
+
+    @api.depends("fp_serial_num")
+    def _compute_fiscal_check(self):
+        for invoice in self:
+            invoice.fiscal_check = bool(invoice.fp_serial_num)
 
     @api.onchange('fiscal_check')
-    def _onchange_fiscal_check(self):
+    def onchange_fiscal_check(self):
+
         def get_max_sequence(sequence_list):
             max_num = -1
             max_sequence = None
@@ -47,7 +67,7 @@ class AccountMove(models.Model):
             new_sequence.reverse()
             return "".join(new_sequence)
 
-        if self.fiscal_check:
+        if self.fiscal_check and not self.fp_serial_num:
             if self.move_type in CUSTOMER_DOCUMENTS:
                 moves = self.env['account.move'].search([
                     ('fiscal_check', '=', True),
@@ -60,7 +80,8 @@ class AccountMove(models.Model):
                 max_fiscal_correlative = get_max_sequence(
                     moves.mapped("fiscal_correlative"))
                 self.control_number = get_next_sequence(max_control_number)
-                self.fiscal_correlative = get_next_sequence(max_fiscal_correlative)
+                self.fiscal_correlative = get_next_sequence(
+                    max_fiscal_correlative)
         else:
             self.control_number = None
             self.fiscal_correlative = None
@@ -72,7 +93,8 @@ class AccountMove(models.Model):
             def _get_rate_to_fiscal_currency(from_currency):
                 return self.env["res.currency"]._get_conversion_rate(
                     from_currency=from_currency,
-                    to_currency=invoice.company_id.fiscal_currency_id or self.env.ref("base.VEF"),
+                    to_currency=invoice.company_id.fiscal_currency_id or self.env.ref(
+                        "base.VEF"),
                     company=invoice.company_id,
                     date=fields.Date.today()
                 )
@@ -112,12 +134,11 @@ class AccountMove(models.Model):
             invoice_list.append(invoice_item)
         return invoice_list
 
-
     def get_origin_invoice_fiscal_data(self):
         res = []
         for invoice in self:
-            assert invoice.reversed_entry_id.fp_serial_num, "The %s invoice does not have the field 'FP_Serial_num'" %invoice.reversed_entry_id.name
-            assert invoice.reversed_entry_id.ticket_ref, "The %s invoice does not have the 'ticket_ref' field" %invoice.reversed_entry_id.name
+            assert invoice.reversed_entry_id.fp_serial_num, "The %s invoice does not have the field 'FP_Serial_num'" % invoice.reversed_entry_id.name
+            assert invoice.reversed_entry_id.ticket_ref, "The %s invoice does not have the 'ticket_ref' field" % invoice.reversed_entry_id.name
 
             res.append({
                 "ticket_ref": invoice.reversed_entry_id.ticket_ref,
@@ -137,7 +158,7 @@ class AccountMove(models.Model):
                             ('move_type', '=', self.move_type),
                             ('fiscal_check', '=', self.fiscal_check),
                             '|',
-                            ('control_number','!=',False),
+                            ('control_number', '!=', False),
                             ('fiscal_correlative', '!=', False),
                             '|',
                             ('control_number', '=', self.control_number),

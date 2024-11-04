@@ -15,6 +15,12 @@
             <label for="show_fiscal_fields" string="noFiscal" class="col-lg-4 o_light_label" />
           </div> -->
         </setting>
+        <setting id="invoice_print_method" help="Enable fields for the registration of the fiscal control and Correlative Number">
+          <field name="invoice_print_method"/>
+        </setting>
+        <setting id="fiscal_currency_id" string="Fiscal Currency" help="Select your fiscal currency for the impression of invoice">
+          <field name="fiscal_currency_id"/>
+        </setting>
       </xpath>
     </field>
   </record>

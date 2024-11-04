@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     "name": "Tribute Fields",
-    "version": "17.0.0.1",
+    "version": "17.0.0.2",
     "depends": ["base", "contacts", "account"],
     "description": """
         Add the necessary fields for the Registry
