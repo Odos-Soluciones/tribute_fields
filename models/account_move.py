@@ -1,5 +1,6 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
+from collections import defaultdict
 import re
 
 CUSTOMER_DOCUMENTS = ['out_invoice','out_refund']
@@ -9,13 +10,31 @@ VENDOR_DOCUMENTS = ['in_invoice','in_refund']
 class AccountMove(models.Model):
     _inherit = "account.move"
 
-    control_number = fields.Char("Control Number", copy=False)
-    fiscal_check = fields.Boolean("Is Fiscal", default=False, copy=False)
-    fiscal_correlative = fields.Char("Fiscal Correlative", copy=False)
     show_fiscal_fields = fields.Boolean(related="company_id.show_fiscal_fields")
+    control_number = fields.Char("Control Number", copy=False)
+    fiscal_check = fields.Boolean(
+        "Is Fiscal",
+        default=False,
+        copy=False,
+        compute="_compute_fiscal_check",
+        readonly=False,
+        store=True
+    )
+    fiscal_correlative = fields.Char("Fiscal Correlative", copy=False)
+    invoice_print_method = fields.Selection(related="company_id.invoice_print_method")
+    ticket_ref = fields.Char("Ticket reference", readonly=True)
+    fp_serial_num = fields.Char("Serial number FP", readonly=True)
+    num_report_z = fields.Char("Numero de reporte Z", readonly=True)
+
+
+    @api.depends("fp_serial_num")
+    def _compute_fiscal_check(self):
+        for invoice in self:
+            invoice.fiscal_check = bool(invoice.fp_serial_num)
 
     @api.onchange('fiscal_check')
-    def _onchange_fiscal_check(self):
+    def onchange_fiscal_check(self):
+
         def get_max_sequence(sequence_list):
             max_num = -1
             max_sequence = None
@@ -47,7 +66,7 @@ class AccountMove(models.Model):
             new_sequence.reverse()
             return "".join(new_sequence)
 
-        if self.fiscal_check:
+        if self.fiscal_check and not self.fp_serial_num:
             if self.move_type in CUSTOMER_DOCUMENTS:
                 moves = self.env['account.move'].search([
                     ('fiscal_check', '=', True),
@@ -64,6 +83,69 @@ class AccountMove(models.Model):
         else:
             self.control_number = None
             self.fiscal_correlative = None
+
+
+    def get_payments_for_fiscal_machine(self):
+        invoice_list = list()
+        for invoice in self:
+
+            def _get_rate_to_fiscal_currency(from_currency):
+                return self.env["res.currency"]._get_conversion_rate(
+                    from_currency=from_currency,
+                    to_currency=invoice.company_id.fiscal_currency_id or self.env.ref("base.VEF"),
+                    company=invoice.company_id,
+                    date=fields.Date.today()
+                )
+
+            rml = invoice._get_all_reconciled_invoice_partials()
+            invoice_item = {
+                "id": invoice.id,
+                "name": invoice.name,
+                "payments": []
+            }
+
+            # Tomamos los metodos de pago de Facturación
+            for ml in rml:
+                if ml["aml"].journal_id.type in ["bank", "cash"]:
+                    invoice_item["payments"].append({
+                        "journal_id": ml["aml"].journal_id.id,
+                        "payment_method": ml["aml"].journal_id.name,
+                        "amount": abs(ml["amount"]),
+                        "currency": {
+                            "name": ml["currency"].name,
+                            "rate": _get_rate_to_fiscal_currency(ml["currency"])
+                        }
+                    })
+
+            # Tomamos los pagos provenientes del PoS
+            if hasattr(invoice, "pos_order_ids"):
+                invoice_item["payments"] += [{
+                    "journal_id": pos_payment.payment_method_id.journal_id.id,
+                    "payment_method": pos_payment.payment_method_id.journal_id.name,
+                    "amount": abs(pos_payment.amount),
+                    "currency": {
+                        "name": pos_payment.currency_id.name,
+                        "rate": _get_rate_to_fiscal_currency(pos_payment.currency_id)
+                    }
+                } for pos_payment in invoice.mapped("pos_order_ids.payment_ids")]
+
+            invoice_list.append(invoice_item)
+        return invoice_list
+
+
+    def get_origin_invoice_fiscal_data(self):
+        res = []
+        for invoice in self:
+            assert invoice.reversed_entry_id.fp_serial_num, "The %s invoice does not have the field 'FP_Serial_num'" %invoice.reversed_entry_id.name
+            assert invoice.reversed_entry_id.ticket_ref, "The %s invoice does not have the 'ticket_ref' field" %invoice.reversed_entry_id.name
+
+            res.append({
+                "ticket_ref": invoice.reversed_entry_id.ticket_ref,
+                "fp_serial_num": invoice.reversed_entry_id.fp_serial_num,
+                "invoice_date": invoice.reversed_entry_id.invoice_date,
+            })
+        return res
+
 
     @api.constrains("fiscal_correlative", "control_number")
     def _constrains_fiscal_fields(self):
