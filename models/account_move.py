@@ -103,6 +103,10 @@ class AccountMove(models.Model):
             invoice_item = {
                 "id": invoice.id,
                 "name": invoice.name,
+                "currency": {
+                    "name": invoice.currency_id.name if invoice.currency_id else invoice.company_id.currency_id.name,
+                    "rate": _get_rate_to_fiscal_currency(invoice.currency_id),
+                },
                 "payments": []
             }
 
