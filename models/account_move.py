@@ -3,8 +3,8 @@ from odoo.exceptions import UserError
 from collections import defaultdict
 import re
 
-CUSTOMER_DOCUMENTS = ['out_invoice','out_refund']
-VENDOR_DOCUMENTS = ['in_invoice','in_refund']
+CUSTOMER_DOCUMENTS = ['out_invoice', 'out_refund']
+VENDOR_DOCUMENTS = ['in_invoice', 'in_refund']
 
 
 class AccountMove(models.Model):
@@ -21,11 +21,11 @@ class AccountMove(models.Model):
         store=True
     )
     fiscal_correlative = fields.Char("Fiscal Correlative", copy=False)
-    invoice_print_method = fields.Selection(related="company_id.invoice_print_method")
+    invoice_print_method = fields.Selection(
+        related="company_id.invoice_print_method")
     ticket_ref = fields.Char("Ticket reference", readonly=True)
     fp_serial_num = fields.Char("Serial number FP", readonly=True)
     num_report_z = fields.Char("Numero de reporte Z", readonly=True)
-
 
     @api.depends("fp_serial_num")
     def _compute_fiscal_check(self):
@@ -79,11 +79,11 @@ class AccountMove(models.Model):
                 max_fiscal_correlative = get_max_sequence(
                     moves.mapped("fiscal_correlative"))
                 self.control_number = get_next_sequence(max_control_number)
-                self.fiscal_correlative = get_next_sequence(max_fiscal_correlative)
+                self.fiscal_correlative = get_next_sequence(
+                    max_fiscal_correlative)
         else:
             self.control_number = None
             self.fiscal_correlative = None
-
 
     def get_payments_for_fiscal_machine(self):
         invoice_list = list()
@@ -92,7 +92,8 @@ class AccountMove(models.Model):
             def _get_rate_to_fiscal_currency(from_currency):
                 return self.env["res.currency"]._get_conversion_rate(
                     from_currency=from_currency,
-                    to_currency=invoice.company_id.fiscal_currency_id or self.env.ref("base.VEF"),
+                    to_currency=invoice.company_id.fiscal_currency_id or self.env.ref(
+                        "base.VEF"),
                     company=invoice.company_id,
                     date=fields.Date.today()
                 )
@@ -101,6 +102,10 @@ class AccountMove(models.Model):
             invoice_item = {
                 "id": invoice.id,
                 "name": invoice.name,
+                "currency": {
+                    "name": invoice.currency_id.name if invoice.currency_id else invoice.company_id.currency_id.name,
+                    "rate": _get_rate_to_fiscal_currency(invoice.currency_id),
+                },
                 "payments": []
             }
 
@@ -132,12 +137,11 @@ class AccountMove(models.Model):
             invoice_list.append(invoice_item)
         return invoice_list
 
-
     def get_origin_invoice_fiscal_data(self):
         res = []
         for invoice in self:
-            assert invoice.reversed_entry_id.fp_serial_num, "The %s invoice does not have the field 'FP_Serial_num'" %invoice.reversed_entry_id.name
-            assert invoice.reversed_entry_id.ticket_ref, "The %s invoice does not have the 'ticket_ref' field" %invoice.reversed_entry_id.name
+            assert invoice.reversed_entry_id.fp_serial_num, "The %s invoice does not have the field 'FP_Serial_num'" % invoice.reversed_entry_id.name
+            assert invoice.reversed_entry_id.ticket_ref, "The %s invoice does not have the 'ticket_ref' field" % invoice.reversed_entry_id.name
 
             res.append({
                 "ticket_ref": invoice.reversed_entry_id.ticket_ref,
@@ -145,7 +149,6 @@ class AccountMove(models.Model):
                 "invoice_date": invoice.reversed_entry_id.invoice_date,
             })
         return res
-
 
     @api.constrains("fiscal_correlative", "control_number")
     def _constrains_fiscal_fields(self):
@@ -158,7 +161,7 @@ class AccountMove(models.Model):
                             ('move_type', '=', self.move_type),
                             ('fiscal_check', '=', self.fiscal_check),
                             '|',
-                            ('control_number','!=',False),
+                            ('control_number', '!=', False),
                             ('fiscal_correlative', '!=', False),
                             '|',
                             ('control_number', '=', self.control_number),
