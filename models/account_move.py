@@ -10,8 +10,7 @@ VENDOR_DOCUMENTS = ["in_invoice", "in_refund"]
 class AccountMove(models.Model):
     _inherit = "account.move"
 
-    show_fiscal_fields = fields.Boolean(
-        related="company_id.show_fiscal_fields")
+    # show_fiscal_fields = fields.Boolean(related="company_id.show_fiscal_fields")
     control_number = fields.Char("Control Number", copy=False)
     fiscal_check = fields.Boolean(
         "Is Fiscal",

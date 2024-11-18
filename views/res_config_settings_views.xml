@@ -9,12 +9,6 @@
       <xpath
         expr="//block[@name='default_taxes_setting_container']"
         position="inside">
-        <setting id="show_fiscal_fields" string="Fiscalization" help="Enable fields for the registration of the Fiscal Control and Correlative Number.">
-          <field name="show_fiscal_fields"/>
-          <!-- <div class="row mt32">
-            <label for="show_fiscal_fields" string="noFiscal" class="col-lg-4 o_light_label" />
-          </div> -->
-        </setting>
         <setting id="invoice_print_method" help="Enable fields for the registration of the fiscal control and Correlative Number">
           <field name="invoice_print_method"/>
         </setting>
