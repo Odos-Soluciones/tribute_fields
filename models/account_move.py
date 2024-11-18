@@ -3,8 +3,8 @@ from odoo.exceptions import UserError
 from collections import defaultdict
 import re
 
-CUSTOMER_DOCUMENTS = ['out_invoice', 'out_refund']
-VENDOR_DOCUMENTS = ['in_invoice', 'in_refund']
+CUSTOMER_DOCUMENTS = ["out_invoice", "out_refund"]
+VENDOR_DOCUMENTS = ["in_invoice", "in_refund"]
 
 
 class AccountMove(models.Model):
@@ -33,7 +33,7 @@ class AccountMove(models.Model):
         for invoice in self:
             invoice.fiscal_check = bool(invoice.fp_serial_num)
 
-    @api.onchange('fiscal_check')
+    @api.onchange("fiscal_check")
     def onchange_fiscal_check(self):
 
         def get_max_sequence(sequence_list):
@@ -69,10 +69,11 @@ class AccountMove(models.Model):
 
         if self.fiscal_check and not self.fp_serial_num:
             if self.move_type in CUSTOMER_DOCUMENTS:
-                moves = self.env['account.move'].search([
-                    ('fiscal_check', '=', True),
-                    ('move_type', '=', self.move_type),
-                    ('company_id', '=', self.company_id.id),
+                moves = self.env["account.move"].search([
+                    ("fiscal_check", "=", True),
+                    ("move_type", "=", self.move_type),
+                    ("company_id", "=", self.company_id.id),
+                    ("journal_id", "=", self.journal_id.id),
                 ])
 
                 max_control_number = get_max_sequence(
@@ -157,16 +158,16 @@ class AccountMove(models.Model):
             try:
                 if self.fiscal_check:
                     if self.move_type in CUSTOMER_DOCUMENTS:
-                        moves = self.env['account.move'].search([
-                            ('id', '!=', self.id),
-                            ('move_type', '=', self.move_type),
-                            ('fiscal_check', '=', self.fiscal_check),
-                            '|',
-                            ('control_number', '!=', False),
-                            ('fiscal_correlative', '!=', False),
-                            '|',
-                            ('control_number', '=', self.control_number),
-                            ('fiscal_correlative', '=', self.fiscal_correlative),
+                        moves = self.env["account.move"].search([
+                            ("id", "!=", self.id),
+                            ("move_type", "=", self.move_type),
+                            ("fiscal_check", "=", self.fiscal_check),
+                            "|",
+                            ("control_number", "!=", False),
+                            ("fiscal_correlative", "!=", False),
+                            "|",
+                            ("control_number", "=", self.control_number),
+                            ("fiscal_correlative", "=", self.fiscal_correlative),
                         ])
 
                         assert not moves, _(
