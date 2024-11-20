@@ -26,6 +26,20 @@ class AccountMove(models.Model):
     ticket_ref = fields.Char("Ticket reference", readonly=True)
     fp_serial_num = fields.Char("Serial number FP", readonly=True)
     num_report_z = fields.Char("Numero de reporte Z", readonly=True)
+    is_debit_note = fields.Boolean(compute="_compute_type_of_document")
+    is_credit_note = fields.Boolean(compute="_compute_type_of_document")
+
+    def _compute_type_of_document(self):
+        for invoice in self:
+            invoice.is_debit_note = bool(
+                invoice.reversed_entry_id and
+                invoice.move_type in ["out_invoice", "in_invoice"]
+            )
+
+            invoice.is_credit_note = bool(
+                invoice.reversed_entry_id and
+                invoice.move_type in ["out_refund", "in_refund"]
+            )
 
     @api.depends("fp_serial_num")
     def _compute_fiscal_check(self):
