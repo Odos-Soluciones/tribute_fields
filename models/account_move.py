@@ -126,10 +126,10 @@ class AccountMove(models.Model):
 
             invoice.tax_totals["groups_by_subtotal"][aux_key] = invoice.tax_totals["groups_by_subtotal"].get(aux_key, []) + [{
                 "tax_group_name": _("Global Discount"),
-                "tax_group_amount": 10,
-                "tax_group_base_amount": 1,
-                "formatted_tax_group_amount": invoice.currency_id.format(10),
-                "formatted_tax_group_base_amount": invoice.currency_id.format(1),
+                "tax_group_amount": -10,
+                "tax_group_base_amount": -100,
+                "formatted_tax_group_amount": invoice.currency_id.format(-10),
+                "formatted_tax_group_base_amount": invoice.currency_id.format(-100),
                 "hide_base_amount": False
             }]
 
