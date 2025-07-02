@@ -24,6 +24,25 @@ class AccountMove(models.Model):
     ticket_ref = fields.Char("Ticket reference", readonly=True)
     fp_serial_num = fields.Char("Serial number FP", readonly=True)
     num_report_z = fields.Char("Numero de reporte Z", readonly=True)
+    global_discount = fields.Float("Global Discount", digits=(12, 2), default=0.0,
+        help="Global discount applied to the invoice, this is not a fiscal field")
+
+    @api.onchange("global_discount")
+    def _onchange_global_discount(self):
+        """
+        This method is used to apply a global discount to the invoice.
+        It will update the invoice lines with the global discount amount.
+        """
+        if self.global_discount < 0:
+            raise UserError(_("The global discount cannot be negative."))
+
+        if not self.invoice_line_ids:
+            return
+
+        for line in self.invoice_line_ids:
+            line.discount = self.global_discount
+            line._compute_totals()
+
 
 
     @api.depends("fp_serial_num")
@@ -82,6 +101,47 @@ class AccountMove(models.Model):
         else:
             self.control_number = None
             self.fiscal_correlative = None
+
+
+
+    @api.depends_context('lang')
+    @api.depends(
+        'invoice_line_ids.currency_rate',
+        'invoice_line_ids.tax_base_amount',
+        'invoice_line_ids.tax_line_id',
+        'invoice_line_ids.price_total',
+        'invoice_line_ids.price_subtotal',
+        'invoice_payment_term_id',
+        'partner_id',
+        'currency_id',
+        'global_discount'
+    )
+    def _compute_tax_totals(self):
+        super()._compute_tax_totals()
+        for invoice in self:
+            if not invoice.tax_totals or invoice.global_discount <= 0:
+                continue
+            
+            aux_key = _("Untaxed Amount")
+
+            invoice.tax_totals["groups_by_subtotal"][aux_key] = invoice.tax_totals["groups_by_subtotal"].get(aux_key, []) + [{
+                "tax_group_name": _("Global Discount"),
+                "tax_group_amount": 10,
+                "tax_group_base_amount": 1,
+                "formatted_tax_group_amount": invoice.currency_id.format(10),
+                "formatted_tax_group_base_amount": invoice.currency_id.format(1),
+                "hide_base_amount": False
+            }]
+
+            if not invoice.tax_totals.get("subtotals"):
+                invoice.tax_totals.update({
+                    "subtotals": [{
+                        "name": aux_key,
+                        "amount": invoice.amount_untaxed,
+                        "formatted_amount": invoice.currency_id.format(invoice.amount_untaxed)
+                    }],
+                    "subtotals_order": [aux_key]
+                })
 
 
     def get_payments_for_fiscal_machine(self):

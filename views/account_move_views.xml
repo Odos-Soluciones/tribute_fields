@@ -15,6 +15,7 @@
         <field name="ticket_ref" attrs="{'invisible': ['|',('move_type', 'in', ['entry', 'in_invoice', 'in_refund']), ('invoice_print_method', '=', 'free_form')]}"/>
         <field name="fp_serial_num" attrs="{'invisible': ['|',('move_type','in',['entry', 'in_invoice', 'in_refund']), ('invoice_print_method', '=', 'free_form')]}" />
         <field name="num_report_z" attrs="{'invisible': ['|',('move_type','in',['entry', 'in_invoice', 'in_refund']), ('invoice_print_method', '=', 'free_form')]}"/>
+        <field name="global_discount"/>
       </field>
     </field>
   </record>
