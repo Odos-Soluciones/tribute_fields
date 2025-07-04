@@ -24,12 +24,45 @@ class AccountMove(models.Model):
     ticket_ref = fields.Char("Ticket reference", readonly=True)
     fp_serial_num = fields.Char("Serial number FP", readonly=True)
     num_report_z = fields.Char("Numero de reporte Z", readonly=True)
+    global_discount = fields.Float("Global Discount", digits=(12, 2), default=0.0,
+        help="Global discount applied to the invoice, this is not a fiscal field")
+    amount_discount = fields.Monetary('Discount', store=True, compute='_compute_amount_discount', readonly=True)
+
+    @api.depends('invoice_line_ids.price_total', 'invoice_line_ids.discount')
+    def _compute_amount_discount(self):
+
+        def get_amount_discount(line):
+            taxes = line.tax_ids
+            amount_base = line.price_unit * line.quantity
+            taxes_amount = [amount_base * tax.amount / 100 for tax in taxes]
+
+            return (sum(taxes_amount) + amount_base) * line.discount / 100
+
+        for invoice in self:
+            invoice.amount_discount = sum(invoice.invoice_line_ids.mapped(get_amount_discount))
+
+    @api.onchange("global_discount")
+    def _onchange_global_discount(self):
+        """
+        This method is used to apply a global discount to the invoice.
+        It will update the invoice lines with the global discount amount.
+        """
+        if self.global_discount < 0:
+            raise UserError(_("The global discount cannot be negative."))
+
+        if not self.invoice_line_ids:
+            return
+
+        for line in self.invoice_line_ids:
+            line.discount = self.global_discount
+            line._compute_totals()
 
 
     @api.depends("fp_serial_num")
     def _compute_fiscal_check(self):
         for invoice in self:
             invoice.fiscal_check = bool(invoice.fp_serial_num)
+
 
     @api.onchange('fiscal_check')
     def onchange_fiscal_check(self):
@@ -82,6 +115,45 @@ class AccountMove(models.Model):
         else:
             self.control_number = None
             self.fiscal_correlative = None
+
+
+    #TODO: Add tax totals
+
+    @api.depends_context('lang')
+    @api.depends(
+        'invoice_line_ids.currency_rate',
+        'invoice_line_ids.tax_base_amount',
+        'invoice_line_ids.tax_line_id',
+        'invoice_line_ids.price_total',
+        'invoice_line_ids.price_subtotal',
+        'invoice_payment_term_id',
+        'partner_id',
+        'currency_id',
+        'global_discount'
+    )
+    def _compute_tax_totals(self):
+        super()._compute_tax_totals()
+        for invoice in self:
+
+            if invoice.amount_discount <= 0:
+                continue
+
+            vals = [
+                {
+                    "name": _("Untaxed Amount Without Discount"),
+                    "amount": sum(invoice.invoice_line_ids.mapped(lambda l: l.quantity * l.price_unit)),
+                    "formatted_amount": invoice.currency_id.format(sum(invoice.invoice_line_ids.mapped(lambda l: l.quantity * l.price_unit)))
+                },
+                {
+                    "name": _("Global Discount"),
+                    "amount": invoice.amount_discount,
+                    "formatted_amount": invoice.currency_id.format(invoice.amount_discount)
+                }
+            ]
+
+            invoice.tax_totals["subtotals"] = vals + invoice.tax_totals["subtotals"]
+            invoice.tax_totals["groups_by_subtotal"][_("Global Discount")] = []
+            invoice.tax_totals["groups_by_subtotal"][_("Untaxed Amount Without Discount")] = []
 
 
     def get_payments_for_fiscal_machine(self):
