@@ -6,14 +6,29 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-19 15:08+0000\n"
-"PO-Revision-Date: 2024-03-19 15:08+0000\n"
+"POT-Creation-Date: 2025-07-04 19:55+0000\n"
+"PO-Revision-Date: 2025-07-04 19:55+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: tribute_fields
+#: model_terms:ir.ui.view,arch_db:tribute_fields.res_config_settings_view_form_inherit_tribute_fields
+msgid "<span class=\"fa fa-lg fa-building-o\" title=\"Fiscal Currency\"/>"
+msgstr "<span class=\"fa fa-lg fa-building-o\" title=\"Moneda fiscal\"/>"
+
+#. module: tribute_fields
+#: model_terms:ir.ui.view,arch_db:tribute_fields.res_config_settings_view_form_inherit_tribute_fields
+msgid "<span class=\"fa fa-lg fa-building-o\" title=\"Show Fiscal Fields\"/>"
+msgstr "<span class=\"fa fa-lg fa-building-o\" title=\"Mostrar campos fiscales\"/>"
+
+#. module: tribute_fields
+#: model:ir.model.fields.selection,name:tribute_fields.selection__res_company__invoice_print_method__both
+msgid "Both"
+msgstr "Ambos"
 
 #. module: tribute_fields
 #: model:ir.model,name:tribute_fields.model_res_company
@@ -23,7 +38,7 @@ msgstr "Compañías"
 #. module: tribute_fields
 #: model:ir.model,name:tribute_fields.model_res_config_settings
 msgid "Config Settings"
-msgstr "Opciones de configuración"
+msgstr "Ajustes de configuración"
 
 #. module: tribute_fields
 #: model:ir.model,name:tribute_fields.model_res_partner
@@ -38,10 +53,25 @@ msgid "Control Number"
 msgstr "Número de control"
 
 #. module: tribute_fields
+#: model:ir.model.fields,field_description:tribute_fields.field_account_bank_statement_line__amount_discount
+#: model:ir.model.fields,field_description:tribute_fields.field_account_move__amount_discount
+#: model:ir.model.fields,field_description:tribute_fields.field_account_payment__amount_discount
+msgid "Discount"
+msgstr "Descuento"
+
+#. module: tribute_fields
 #: model:ir.model.fields,field_description:tribute_fields.field_res_partner__ced_rif
 #: model:ir.model.fields,field_description:tribute_fields.field_res_users__ced_rif
 msgid "Document/RIF"
 msgstr "Cedula / RIF"
+
+#. module: tribute_fields
+#: model_terms:ir.ui.view,arch_db:tribute_fields.res_config_settings_view_form_inherit_tribute_fields
+msgid ""
+"Enable fields for the registration of the fiscal Control and Correlative "
+"Number"
+msgstr ""
+"Habilitar campos para el registro del Control Fiscal y Número Correlativo"
 
 #. module: tribute_fields
 #: model:ir.model.fields,field_description:tribute_fields.field_account_bank_statement_line__fiscal_correlative
@@ -49,6 +79,12 @@ msgstr "Cedula / RIF"
 #: model:ir.model.fields,field_description:tribute_fields.field_account_payment__fiscal_correlative
 msgid "Fiscal Correlative"
 msgstr "Correlativo fiscal"
+
+#. module: tribute_fields
+#: model:ir.model.fields,field_description:tribute_fields.field_res_company__fiscal_currency_id
+#: model:ir.model.fields,field_description:tribute_fields.field_res_config_settings__fiscal_currency_id
+msgid "Fiscal Currency"
+msgstr "Moneda fiscal"
 
 #. module: tribute_fields
 #: model_terms:ir.ui.view,arch_db:tribute_fields.inherited_base_partner_form
@@ -64,6 +100,34 @@ msgstr "Facturas fiscales"
 #: model:ir.ui.menu,name:tribute_fields.fiscal_reports_root_menu
 msgid "Fiscal Reports"
 msgstr "Informes fiscales"
+
+#. module: tribute_fields
+#: model:ir.model.fields.selection,name:tribute_fields.selection__res_company__invoice_print_method__fiscal_machine
+msgid "Fiscal machine"
+msgstr "Máquina fiscal"
+
+#. module: tribute_fields
+#: model:ir.model.fields.selection,name:tribute_fields.selection__res_company__invoice_print_method__free_form
+msgid "Free form"
+msgstr "Forma libre"
+
+#. module: tribute_fields
+#. odoo-python
+#: code:addons/tribute_fields/models/account_move.py:0
+#: code:addons/tribute_fields/models/account_move.py:0
+#: model:ir.model.fields,field_description:tribute_fields.field_account_bank_statement_line__global_discount
+#: model:ir.model.fields,field_description:tribute_fields.field_account_move__global_discount
+#: model:ir.model.fields,field_description:tribute_fields.field_account_payment__global_discount
+#, python-format
+msgid "Global Discount"
+msgstr "Descuento global"
+
+#. module: tribute_fields
+#: model:ir.model.fields,help:tribute_fields.field_account_bank_statement_line__global_discount
+#: model:ir.model.fields,help:tribute_fields.field_account_move__global_discount
+#: model:ir.model.fields,help:tribute_fields.field_account_payment__global_discount
+msgid "Global discount applied to the invoice, this is not a fiscal field"
+msgstr "Descuento global aplicado a la factura, este no es un campo fiscal"
 
 #. module: tribute_fields
 #: model:ir.model.fields,field_description:tribute_fields.field_account_bank_statement_line__fiscal_check
@@ -88,7 +152,7 @@ msgstr "Asiento contable"
 #: model:ir.model.fields,field_description:tribute_fields.field_res_partner__taxpayer_license
 #: model:ir.model.fields,field_description:tribute_fields.field_res_users__taxpayer_license
 msgid "LAE"
-msgstr "LAE"
+msgstr "Licencia de Actividad Económica"
 
 #. module: tribute_fields
 #: model:ir.model.fields,field_description:tribute_fields.field_res_company__municipality
@@ -101,6 +165,22 @@ msgid "No Fiscal Invoices"
 msgstr "Sin facturas fiscales"
 
 #. module: tribute_fields
+#: model:ir.model.fields,field_description:tribute_fields.field_account_bank_statement_line__num_report_z
+#: model:ir.model.fields,field_description:tribute_fields.field_account_move__num_report_z
+#: model:ir.model.fields,field_description:tribute_fields.field_account_payment__num_report_z
+msgid "Numero de reporte Z"
+msgstr "Número de reporte Z"
+
+#. module: tribute_fields
+#: model:ir.model.fields,field_description:tribute_fields.field_account_bank_statement_line__invoice_print_method
+#: model:ir.model.fields,field_description:tribute_fields.field_account_move__invoice_print_method
+#: model:ir.model.fields,field_description:tribute_fields.field_account_payment__invoice_print_method
+#: model:ir.model.fields,field_description:tribute_fields.field_res_company__invoice_print_method
+#: model:ir.model.fields,field_description:tribute_fields.field_res_config_settings__invoice_print_method
+msgid "Print Method"
+msgstr "Método de impresión"
+
+#. module: tribute_fields
 #: model:ir.model.fields,field_description:tribute_fields.field_res_company__ruc
 #: model:ir.model.fields,field_description:tribute_fields.field_res_partner__ruc
 #: model:ir.model.fields,field_description:tribute_fields.field_res_users__ruc
@@ -108,9 +188,18 @@ msgid "RUC"
 msgstr "RUC"
 
 #. module: tribute_fields
-#: model:ir.model.fields,field_description:tribute_fields.field_account_bank_statement_line__show_fiscal_fields
-#: model:ir.model.fields,field_description:tribute_fields.field_account_move__show_fiscal_fields
-#: model:ir.model.fields,field_description:tribute_fields.field_account_payment__show_fiscal_fields
+#: model_terms:ir.ui.view,arch_db:tribute_fields.res_config_settings_view_form_inherit_tribute_fields
+msgid "Select your fiscal currency for the impression of invoices"
+msgstr "Seleccione su moneda fiscal para la impresión de facturas"
+
+#. module: tribute_fields
+#: model:ir.model.fields,field_description:tribute_fields.field_account_bank_statement_line__fp_serial_num
+#: model:ir.model.fields,field_description:tribute_fields.field_account_move__fp_serial_num
+#: model:ir.model.fields,field_description:tribute_fields.field_account_payment__fp_serial_num
+msgid "Serial number FP"
+msgstr "Número de serie FP"
+
+#. module: tribute_fields
 #: model:ir.model.fields,field_description:tribute_fields.field_res_company__show_fiscal_fields
 #: model:ir.model.fields,field_description:tribute_fields.field_res_config_settings__show_fiscal_fields
 msgid "Show Fiscal Fields"
@@ -137,3 +226,25 @@ msgid ""
 msgstr ""
 "El correlativo fiscal y el número de control deben ser únicos, verifique los"
 " Siguientes documentos: %s"
+
+#. module: tribute_fields
+#. odoo-python
+#: code:addons/tribute_fields/models/account_move.py:0
+#, python-format
+msgid "The global discount cannot be negative."
+msgstr "El descuento global no puede ser negativo."
+
+#. module: tribute_fields
+#: model:ir.model.fields,field_description:tribute_fields.field_account_bank_statement_line__ticket_ref
+#: model:ir.model.fields,field_description:tribute_fields.field_account_move__ticket_ref
+#: model:ir.model.fields,field_description:tribute_fields.field_account_payment__ticket_ref
+msgid "Ticket reference"
+msgstr "Referencia de ticket"
+
+#. module: tribute_fields
+#. odoo-python
+#: code:addons/tribute_fields/models/account_move.py:0
+#: code:addons/tribute_fields/models/account_move.py:0
+#, python-format
+msgid "Untaxed Amount Without Discount"
+msgstr "Subtotal sin descuento"

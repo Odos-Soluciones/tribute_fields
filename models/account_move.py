@@ -26,6 +26,20 @@ class AccountMove(models.Model):
     num_report_z = fields.Char("Numero de reporte Z", readonly=True)
     global_discount = fields.Float("Global Discount", digits=(12, 2), default=0.0,
         help="Global discount applied to the invoice, this is not a fiscal field")
+    amount_discount = fields.Monetary('Discount', store=True, compute='_compute_amount_discount', readonly=True)
+
+    @api.depends('invoice_line_ids.price_total', 'invoice_line_ids.discount')
+    def _compute_amount_discount(self):
+
+        def get_amount_discount(line):
+            taxes = line.tax_ids
+            amount_base = line.price_unit * line.quantity
+            taxes_amount = [amount_base * tax.amount / 100 for tax in taxes]
+
+            return (sum(taxes_amount) + amount_base) * line.discount / 100
+
+        for invoice in self:
+            invoice.amount_discount = sum(invoice.invoice_line_ids.mapped(get_amount_discount))
 
     @api.onchange("global_discount")
     def _onchange_global_discount(self):
@@ -44,11 +58,11 @@ class AccountMove(models.Model):
             line._compute_totals()
 
 
-
     @api.depends("fp_serial_num")
     def _compute_fiscal_check(self):
         for invoice in self:
             invoice.fiscal_check = bool(invoice.fp_serial_num)
+
 
     @api.onchange('fiscal_check')
     def onchange_fiscal_check(self):
@@ -103,6 +117,7 @@ class AccountMove(models.Model):
             self.fiscal_correlative = None
 
 
+    #TODO: Add tax totals
 
     @api.depends_context('lang')
     @api.depends(
@@ -119,29 +134,26 @@ class AccountMove(models.Model):
     def _compute_tax_totals(self):
         super()._compute_tax_totals()
         for invoice in self:
-            if not invoice.tax_totals or invoice.global_discount <= 0:
+
+            if invoice.amount_discount <= 0:
                 continue
-            
-            aux_key = _("Untaxed Amount")
 
-            invoice.tax_totals["groups_by_subtotal"][aux_key] = invoice.tax_totals["groups_by_subtotal"].get(aux_key, []) + [{
-                "tax_group_name": _("Global Discount"),
-                "tax_group_amount": -10,
-                "tax_group_base_amount": -100,
-                "formatted_tax_group_amount": invoice.currency_id.format(-10),
-                "formatted_tax_group_base_amount": invoice.currency_id.format(-100),
-                "hide_base_amount": False
-            }]
+            vals = [
+                {
+                    "name": _("Untaxed Amount Without Discount"),
+                    "amount": sum(invoice.invoice_line_ids.mapped(lambda l: l.quantity * l.price_unit)),
+                    "formatted_amount": invoice.currency_id.format(sum(invoice.invoice_line_ids.mapped(lambda l: l.quantity * l.price_unit)))
+                },
+                {
+                    "name": _("Global Discount"),
+                    "amount": invoice.amount_discount,
+                    "formatted_amount": invoice.currency_id.format(invoice.amount_discount)
+                }
+            ]
 
-            if not invoice.tax_totals.get("subtotals"):
-                invoice.tax_totals.update({
-                    "subtotals": [{
-                        "name": aux_key,
-                        "amount": invoice.amount_untaxed,
-                        "formatted_amount": invoice.currency_id.format(invoice.amount_untaxed)
-                    }],
-                    "subtotals_order": [aux_key]
-                })
+            invoice.tax_totals["subtotals"] = vals + invoice.tax_totals["subtotals"]
+            invoice.tax_totals["groups_by_subtotal"][_("Global Discount")] = []
+            invoice.tax_totals["groups_by_subtotal"][_("Untaxed Amount Without Discount")] = []
 
 
     def get_payments_for_fiscal_machine(self):
