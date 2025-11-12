@@ -11,23 +11,25 @@ class AccountMove(models.Model):
     _inherit = "account.move"
 
     # show_fiscal_fields = fields.Boolean(related="company_id.show_fiscal_fields")
+    fiscal_check = fields.Boolean("Is Fiscal", default=False, copy=False, compute="_compute_fiscal_check", readonly=False, store=True)
+    invoice_print_method = fields.Selection(related="company_id.invoice_print_method")
+
+    # Free Form Fields
     control_number = fields.Char("Control Number", copy=False)
-    fiscal_check = fields.Boolean(
-        "Is Fiscal",
-        default=False,
-        copy=False,
-        compute="_compute_fiscal_check",
-        readonly=False,
-        store=True
-    )
     fiscal_correlative = fields.Char("Fiscal Correlative", copy=False)
-    invoice_print_method = fields.Selection(
-        related="company_id.invoice_print_method")
-    ticket_ref = fields.Char("Ticket reference", readonly=True)
-    fp_serial_num = fields.Char("Serial number FP", readonly=True)
-    num_report_z = fields.Char("Numero de reporte Z", readonly=True)
+    
+    # Fiscal Machine Fields
+    fiscal_number = fields.Char("Fiscal Number", readonly=True)
+    fiscal_printer_serial = fields.Char("Printer Serial", readonly=True)
+    report_z_number = fields.Char("Report Z", readonly=True)
+
     is_debit_note = fields.Boolean(compute="_compute_type_of_document")
     is_credit_note = fields.Boolean(compute="_compute_type_of_document")
+
+    
+    def fields_view_get(self, *args, **kwargs):
+        res = super().fields_get(*args, **kwargs)
+        return res
 
     def _compute_type_of_document(self):
         for invoice in self:
@@ -41,10 +43,10 @@ class AccountMove(models.Model):
                 invoice.move_type in ["out_refund", "in_refund"]
             )
 
-    @api.depends("fp_serial_num")
+    @api.depends("fiscal_number")
     def _compute_fiscal_check(self):
         for invoice in self:
-            invoice.fiscal_check = bool(invoice.fp_serial_num)
+            invoice.fiscal_check = bool(invoice.fiscal_number)
 
 
 
@@ -92,7 +94,7 @@ class AccountMove(models.Model):
 
     @api.onchange("fiscal_check")
     def onchange_fiscal_check(self):
-        if not(self.fiscal_check and self.move_type in CUSTOMER_DOCUMENTS) or self.fp_serial_num:
+        if not(self.fiscal_check and self.move_type in CUSTOMER_DOCUMENTS) or self.fiscal_printer_serial:
             self.control_number = None
             self.fiscal_correlative = None
             return 
@@ -166,12 +168,12 @@ class AccountMove(models.Model):
     def get_origin_invoice_fiscal_data(self):
         res = []
         for invoice in self:
-            assert invoice.reversed_entry_id.fp_serial_num, "The %s invoice does not have the field 'FP_Serial_num'" % invoice.reversed_entry_id.name
-            assert invoice.reversed_entry_id.ticket_ref, "The %s invoice does not have the 'ticket_ref' field" % invoice.reversed_entry_id.name
+            assert invoice.reversed_entry_id.fiscal_printer_serial, "The %s invoice does not have the field 'fiscal_printer_serial'" % invoice.reversed_entry_id.name
+            assert invoice.reversed_entry_id.fiscal_number, "The %s invoice does not have the 'fiscal_number' field" % invoice.reversed_entry_id.name
 
             res.append({
-                "ticket_ref": invoice.reversed_entry_id.ticket_ref,
-                "fp_serial_num": invoice.reversed_entry_id.fp_serial_num,
+                "fiscal_number": invoice.reversed_entry_id.fiscal_number,
+                "fiscal_printer_serial": invoice.reversed_entry_id.fiscal_printer_serial,
                 "invoice_date": invoice.reversed_entry_id.invoice_date,
             })
         return res
