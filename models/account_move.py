@@ -19,17 +19,13 @@ class AccountMove(models.Model):
     fiscal_correlative = fields.Char("Fiscal Correlative", copy=False)
     
     # Fiscal Machine Fields
-    fiscal_number = fields.Char("Fiscal Number", readonly=True)
-    fiscal_printer_serial = fields.Char("Printer Serial", readonly=True)
-    report_z_number = fields.Char("Report Z", readonly=True)
+    fiscal_number = fields.Char("Fiscal Number", copy=False, readonly=True)
+    fiscal_printer_serial = fields.Char("Printer Serial", copy=False, readonly=True)
+    report_z_number = fields.Char("Report Z", copy=False, readonly=True)
 
     is_debit_note = fields.Boolean(compute="_compute_type_of_document")
     is_credit_note = fields.Boolean(compute="_compute_type_of_document")
 
-    
-    def fields_view_get(self, *args, **kwargs):
-        res = super().fields_get(*args, **kwargs)
-        return res
 
     def _compute_type_of_document(self):
         for invoice in self:
@@ -43,11 +39,11 @@ class AccountMove(models.Model):
                 invoice.move_type in ["out_refund", "in_refund"]
             )
 
+
     @api.depends("fiscal_number")
     def _compute_fiscal_check(self):
         for invoice in self:
             invoice.fiscal_check = bool(invoice.fiscal_number)
-
 
 
     @api.model

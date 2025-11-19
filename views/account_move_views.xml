@@ -27,7 +27,7 @@
       <field name="name" position="after">
         <field name="invoice_print_method"/>
         <field name="fiscal_check" widget="boolean_toggle" readonly="1"/>
-        <field name="fiscal_correlative"/>
+        <field name="fiscal_correlative" invisible="context.get('test_field')"/>
         <field name="control_number"/>
         <field name="fiscal_number"/>
         <field name="fiscal_printer_serial"/>
