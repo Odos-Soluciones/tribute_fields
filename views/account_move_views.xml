@@ -20,20 +20,20 @@
 
 
   <record id="view_invoice_tree_inherit_tribute_fields" model="ir.ui.view">
-    <field name="name">account.move.view.tree.inherit</field>
-    <field name="model">account.move</field>
-    <field name="inherit_id" ref="account.view_invoice_tree"/>
-    <field name="arch" type="xml">
-      <field name="name" position="after">
-        <field name="invoice_print_method"/>
-        <field name="fiscal_check" widget="boolean_toggle" readonly="1"/>
-        <field name="fiscal_correlative" invisible="context.get('test_field')"/>
-        <field name="control_number"/>
-        <field name="fiscal_number"/>
-        <field name="fiscal_printer_serial"/>
-        <field name="report_z_number"/>
+      <field name="name">account.move.view.tree.inherit</field>
+      <field name="model">account.move</field>
+      <field name="inherit_id" ref="account.view_invoice_tree"/>
+      <field name="arch" type="xml">
+        <field name="name" position="after">
+          <field name="invoice_print_method" optional="hide"/>
+          <field name="fiscal_check" widget="boolean_toggle" readonly="1" optional="hide"/>
+          <field name="fiscal_correlative" optional="hide"/>
+          <field name="control_number" optional="hide"/>
+          <field name="fiscal_number" optional="hide"/>
+          <field name="fiscal_printer_serial" optional="hide"/>
+          <field name="report_z_number" optional="hide"/>
+        </field>
       </field>
-    </field>
   </record>
 
 
